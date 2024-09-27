@@ -11,8 +11,6 @@ exps/
 *.out
 *.pt
 
-# Ignore pretrained directory
-/src/pretrained/
 
 ###########
 # Default #

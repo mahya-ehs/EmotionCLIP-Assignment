@@ -142,6 +142,7 @@ def main():
         model = EmotionCLIP(
             video_len=args.video_len,
             backbone_checkpoint=None,
+            backbone_config="C:/Users/OMISTAJA/Documents/GitHub/EmotionCLIP-Assignment/src/models/model_configs/ViT-B-32.json"
         )
         if args.ckpt_path:
             ckpt = torch.load(args.ckpt_path, map_location='cpu')

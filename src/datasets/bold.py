@@ -83,7 +83,7 @@ def bbox_to_mask(bbox: list[float], target_shape: tuple[int, int]) -> torch.Tens
 # num_frames statistics. max: 299, min: 101, mean: 167, std: 53
 class BoLD(Dataset):
     def __init__(self, 
-        data_folder: str = '/ocean/projects/iri180005p/shared/BOLD_public',
+        data_folder: str = 'D:/BOLD_public',
         video_len: int = 8,
         split: Literal['train', 'val'] = 'train',
         sampling_strategy: str = 'uniform_all',
@@ -103,7 +103,8 @@ class BoLD(Dataset):
         self.template = template if template else lambda x: x
         self.class_names = CLASS_NAMES
         
-        self.video_folder = osp.join(self.data_folder, 'mmextract')
+        #self.video_folder = osp.join(self.data_folder, 'videos')
+        self.video_folder: str ='D:/BOLD_public/videos'
         self.annotation_folder = osp.join(self.data_folder, 'annotations')
         self.joint_folder = osp.join(self.data_folder, 'joints')
         
@@ -133,6 +134,7 @@ class BoLD(Dataset):
             all_joints[video_id] = joints
         return all_joints
     
+    
     def _generate_all_bboxes(self):
         all_joints = self._load_all_joints()
         self.all_bboxes = []
@@ -140,7 +142,12 @@ class BoLD(Dataset):
             video_id = self.annotations.loc[i, 'video_id']
             joints = all_joints[video_id]
             person_joints = joints[joints[:, 1] == self.annotations.loc[i, 'person_id']]
-            bboxes = dict(np.apply_along_axis(joints_to_bbox, 1, person_joints))
+            bboxes = {}
+            # Replaced original code v
+            for i, joint in enumerate(person_joints):
+                bbox = joints_to_bbox(joint)
+                bboxes[i] = bbox
+            #bboxes = dict(np.apply_along_axis(joints_to_bbox_debug, 1, person_joints))
             self.all_bboxes.append(bboxes)
             
         

@@ -728,7 +728,7 @@ class VisualHead(nn.Module):
 class EmotionCLIP(nn.Module):
     def __init__(
         self,
-        backbone_config: str = '/ocean/projects/iri180005p/psuzhang/projects/Movie-CLIP/src/models/model_configs/ViT-B-32.json',
+        backbone_config: str = './src/models/model_configs/ViT-B-32.json',
         backbone_checkpoint: Optional[str] = None,
         temporal_fusion: str = 'transformer',
         video_len: int = 8,

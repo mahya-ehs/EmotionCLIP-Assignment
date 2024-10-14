@@ -39,7 +39,7 @@ class EvalArgs(argparse.Namespace):
     seed: int = 2022
     video_len: int = 8
     device: str = 'cuda:0'
-    dataloader_workers: int = 4
+    dataloader_workers: int = 0
     batch_size: int = 128
     cache_dir: str = './data/cache'
 

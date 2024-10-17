@@ -38,23 +38,22 @@ while True:
     frame = cv2.resize(video_frame, (224, 224))
     mask = cv2.resize(face_mask, (224, 224))
     
+    frame = frame.transpose(2, 0, 1)
+
     # Convert to torch tensors
     frame_tensor = torch.from_numpy(frame).float() / 255.0  # Convert to float32 and normalize
     mask_tensor = torch.from_numpy(mask).float() / 255.0  # Convert to float32 and normalize
     
     # Transpose frame and mask size to (3, 224, 224) and (1, 224, 224)
-    frame_tensor = torch.transpose(frame_tensor, 2, 0, 1)
     mask_tensor = mask_tensor.unsqueeze(0)
     
     # # Add batch dimension: (1, 3, 224, 224)
     # video_frame_tensor = video_frame_tensor.unsqueeze(0)
     # face_mask_tensor = face_mask_tensor.unsqueeze(0)
 
-    # video_frame_tensor = video_frame_tensor.repeat(1, 8, 1, 1, 1)
-    # mask_tensor = mask_tensor.repeat(1, 8, 1, 1, 1)
-    print(frame_tensor.shape)
-    print(mask_tensor.shape)
-
+    frame_tensor = frame_tensor.repeat(1, 8, 1, 1, 1)
+    mask_tensor = mask_tensor.repeat(1, 8, 1, 1, 1)
+    
     features = model.encode_video(frame_tensor, mask_tensor)
 
     with torch.no_grad():

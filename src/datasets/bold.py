@@ -76,7 +76,7 @@ def bbox_to_mask(bbox: list[float], target_shape: tuple[int, int]) -> torch.Tens
     mask = torch.zeros(target_shape[1], target_shape[0])
     if len(bbox) == 0:
         return mask
-    mask[bbox[0]:bbox[2], bbox[1]:bbox[3]] = 1
+    mask[bbox[1][0]:bbox[1][2], bbox[1][1]:bbox[1][3]] = 1
     return mask
 
 # num_frames statistics. max: 299, min: 101, mean: 167, std: 53
@@ -102,7 +102,7 @@ class BoLD(Dataset):
         self.template = template if template else lambda x: x
         self.class_names = CLASS_NAMES
         
-        self.video_folder = osp.join(self.data_folder, 'videos')
+        self.video_folder = osp.join('F:/BOLD_public', 'mmextract')
         self.annotation_folder = osp.join(self.data_folder, 'annotations')
         self.joint_folder = osp.join(self.data_folder, 'joints')
         
@@ -155,10 +155,7 @@ class BoLD(Dataset):
 
     def __getitem__(self, i):
         video_id = self.annotations.loc[i, 'video_id']
-        print(video_id)
         video_id = video_id.replace('/','\\')
-        video_id = '003/IzvOYVMltkI.mp4'
-        print(video_id)
         start_frame = self.annotations.loc[i, 'start_frame']
         end_frame = self.annotations.loc[i, 'end_frame']
         clip_folder = osp.join(self.video_folder, video_id)
@@ -173,8 +170,9 @@ class BoLD(Dataset):
         frames = []
         bboxes = []
         for frame_name in frames_to_be_used:
-            print(frame_name)
-            frame = Image.open(osp.join(clip_folder, frame_name))
+            f = osp.join(clip_folder, frame_name)
+            f = f.replace('\\','/')
+            frame = Image.open(f)
             bbox = self.all_bboxes[i].get(self._fname_to_id(frame_name), [])
             frames.append(frame)
             bboxes.append(bbox)

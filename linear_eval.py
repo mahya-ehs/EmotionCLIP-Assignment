@@ -68,8 +68,12 @@ def extract_features(
             features = F.normalize(features, dim=-1)
         all_features.append(features)
         all_targets.append(targets)
+        print(f"features: {features.shape}")
+        print(f"targets: {targets.shape}")
     all_features = torch.cat(all_features).cpu().numpy()
     all_targets = torch.cat(all_targets).cpu().numpy()
+    print(f"all features: {all_features}")
+    print(f"all targets: {all_targets}")
     return all_features, all_targets
 
 

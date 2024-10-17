@@ -25,6 +25,7 @@ from src.datasets.liris_accede import LirisAccede
 from src.engine.utils import set_random_seed
 from src.engine.logger import setup_logger
 
+import joblib
 
 @dataclass
 class EvalArgs(argparse.Namespace):
@@ -293,6 +294,8 @@ def main():
     
     # train linear classifier
     linear_clf.fit(X_train, y_train)
+    joblib.dump(linear_clf, 'linear_clf_model.joblib')
+    
     p_val = linear_clf.predict_proba(X_val)
     if args.has_test_set:
         p_test = linear_clf.predict_proba(X_test)

@@ -57,12 +57,6 @@ def detect_bounding_box(vid):
     return faces, mask
 
 def draw_labels(label):
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    font_scale = 0.6
-    font_color = (255, 255, 255)  # White color
-    thickness = 2
-    label_size = cv2.getTextSize(label, font, font_scale, thickness)[0]
-    
     label_lines = label.split('\n')
     label_y = 10
     label_x = 10

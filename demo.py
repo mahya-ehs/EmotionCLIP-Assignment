@@ -11,6 +11,7 @@ from torchvision import transforms
 
 # Global constants
 EMOTION_CLASSES =[
+    'neutral',
     'happy',
     'sad',
     'angry',
@@ -223,8 +224,10 @@ def main():
 
         draw_label(frame, label)
         draw_bboxes(frame, person_boxes)
+
+        frame = cv2.resize(frame, (ORIGINAL_FRAME_WIDTH*2, ORIGINAL_FRAME_HEIGHT*2))
         cv2.imshow('Webcam, prediction, bounding boxes', frame)
-        cv2.imshow('Combined mask', combined_mask.numpy())
+        #cv2.imshow('Combined mask', combined_mask.numpy())
 
         frame_count += 1
 

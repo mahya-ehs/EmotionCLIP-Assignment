@@ -3,17 +3,26 @@ import clip
 import torch
 import numpy as np
 import threading
+from PIL import Image
 from ultralytics import YOLO
 from src.models.base import EmotionCLIP
+from torchvision.transforms import functional as F
+from torchvision import transforms
 
 # Global constants
-EMOTION_CLASSES = ["happy", "sad", "neutral", "angry", "sleepy"]
+EMOTION_CLASSES =[
+    'happy',
+    'sad',
+    'angry',
+    'sleeping',
+    'cat'
+]
 YOLO_PERSON_CLASS_ID = 0
 ORIGINAL_FRAME_HEIGHT = 480
 ORIGINAL_FRAME_WIDTH = 640
 ENCODING_FRAME_HEIGHT = 224
 ENCODING_FRAME_WIDTH = 224
-PREDICTIONS_EVERY_N_FRAME = 20
+PREDICTIONS_EVERY_N_FRAME = 60
 BACKBONE_CHECKPOINT_ABSPATH = "C:/Users/Krist/EmotionCLIP-Assignment/exps/cvpr_final-20221113-235224-a4a18adc/checkpoints/latest.pt"
 
 # Global variables
@@ -48,12 +57,48 @@ combined_mask = create_empty_mask(ORIGINAL_FRAME_HEIGHT, ORIGINAL_FRAME_WIDTH)
 # Note that they put the mask value to 1 instead of 255, I don't know if this is the correct way to do it
 def bbox_to_mask(bbox, target_shape):
     mask = torch.zeros(target_shape[1], target_shape[0])
-    if bbox:
-        mask[int(bbox[1]):int(bbox[3]), int(bbox[0]):int(bbox[2])] = 1
+
+    mask[int(bbox[1]):int(bbox[3]), int(bbox[0]):int(bbox[2])] = 1
     return mask
 
 
-#def yolo_results_to_masks():
+def preprocess_frames(
+        frames: list[Image.Image],
+        bboxes: list[list[float]],
+        crop_method: str = 'center',
+) -> tuple[torch.Tensor, torch.Tensor]:
+    RESIZE_SIZE = 256
+    CROP_SIZE = 224
+    processed_frames = []
+    processed_masks = []
+    for frame, bbox in zip(frames, bboxes):
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        pil_image = Image.fromarray(frame_rgb)
+        print(bbox)
+        mask = bbox_to_mask(bbox, (480,640))
+        resized_frame = F.resize(pil_image, size=RESIZE_SIZE, interpolation=transforms.InterpolationMode.BICUBIC)
+        resized_mask = F.resize(mask.unsqueeze(0), size=RESIZE_SIZE).squeeze()
+        if crop_method == 'center':
+            cropped_frame = F.center_crop(resized_frame, output_size=CROP_SIZE)
+            cropped_mask = F.center_crop(resized_mask, output_size=CROP_SIZE)
+        elif crop_method == 'random':
+            i, j, h, w = transforms.RandomCrop.get_params(resized_frame, output_size=CROP_SIZE)
+            cropped_frame = F.crop(resized_frame, i, j, h, w)
+            cropped_mask = F.crop(resized_mask, i, j, h, w)
+        else:
+            raise NotImplementedError
+        normalized_frame = F.normalize(
+            tensor=F.to_tensor(cropped_frame),
+            mean=[0.485, 0.456, 0.406],
+            std=[0.229, 0.224, 0.225]
+        )
+        binarized_mask = (cropped_mask > 0.5).long()
+        processed_frames.append(normalized_frame)
+        processed_masks.append(binarized_mask)
+
+    video = torch.stack(processed_frames, dim=0).float()
+    video_mask = torch.stack(processed_masks, dim=0).long()
+    return video, video_mask
 
 
 
@@ -63,6 +108,7 @@ def predict_emotion(frame):
 
     yolo_results = yolo_model(frame)
     person_class_id = 0
+
     # View results
     if yolo_results:
         for r in yolo_results:
@@ -98,6 +144,7 @@ def predict_emotion(frame):
         # Create an empty mask filled with 0s
         combined_mask = create_empty_mask(ORIGINAL_FRAME_HEIGHT, ORIGINAL_FRAME_WIDTH)
 
+    frame_test, mask_test = preprocess_frames([frame], person_boxes)
     frame_inner = cv2.resize(frame, (ENCODING_FRAME_HEIGHT, ENCODING_FRAME_WIDTH))
     combined_mask_numpy = cv2.resize(combined_mask.numpy(), (ENCODING_FRAME_HEIGHT, ENCODING_FRAME_WIDTH))
     frame_tensor = torch.from_numpy(frame_inner.transpose(2, 0, 1)).float()  # Convert to float32 and normalize
@@ -110,7 +157,7 @@ def predict_emotion(frame):
     mask_tensor = mask_tensor.reshape(-1, H, W)
 
     with torch.no_grad():
-        image_features = emotionclip_model.encode_image(frame_tensor, mask_tensor)
+        image_features = emotionclip_model.encode_image(frame_test, mask_test)
         image_features /= image_features.norm(dim=-1, keepdim=True)
         emotion_features = emotionclip_model.encode_text(EMOTION_CLASSES_TOKENIZED)
         emotion_features /= emotion_features.norm(dim=-1, keepdim=True)

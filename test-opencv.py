@@ -41,7 +41,7 @@ video_capture = cv2.VideoCapture(0)
 
 # Load the pre-trained model
 model = EmotionCLIP(backbone_checkpoint=None)
-ckpt = torch.load("C:/Users/Krist/OneDrive/Documents/GitHub/EmotionCLIP-Assignment/exps/cvpr_final-20221113-235224-a4a18adc/checkpoints/latest.pt", map_location='cpu')
+ckpt = torch.load("exps/cvpr_final-20221113-235224-a4a18adc/checkpoints/latest.pt", map_location='cpu')
 model.load_state_dict(ckpt['model'], strict=True)
 model.eval()
 
@@ -120,6 +120,9 @@ while True:
         C, H, W = frame.shape
         frame_tensor = frame_tensor.reshape(-1, C, H, W)
         mask_tensor = mask_tensor.reshape(-1, H, W)
+
+        print(frame_tensor.shape)
+        print(mask_tensor.shape)
         features = model.encode_image(frame_tensor, mask_tensor)
         features = features.detach().numpy()
         print(f"features shape: {features.shape}")
